@@ -28,9 +28,9 @@ namespace aal
 		source() : index{0} {}
 		virtual ~source(){}
 
-		virtual void update_index(size_t increment) { index.fetch_add(increment); }
-		virtual short get_chunk(size_t i) const { return (i+index.load()<data.size())? data[index + i]:0; }
-		virtual bool is_over() const { return index.load() > data.size(); }
+		virtual void update_index(size_t increment) { index.fetch_add(increment, std::memory_order_acq_rel); }
+		virtual short get_chunk(size_t i) const { return (i + index.load(std::memory_order_acquire)<data.size())? data[index + i] : 0; }
+		virtual bool is_over() const { return index.load(std::memory_order_acquire) >= data.size(); }
 
 	protected:
 
@@ -64,7 +64,7 @@ namespace aal
 			// Check file validity
 			if(!soundFile.good())
 			{
-				throw - 1;
+				throw std::runtime_error("Couldn't load file.");
 			}
 
 			soundFile.seekg (0, std::ios::end);

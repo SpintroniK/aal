@@ -29,7 +29,7 @@ namespace aal
 		device() : run_thread(true)
 		{
 
-			int err = snd_pcm_open(&handle, "default", SND_PCM_STREAM_PLAYBACK, 0);
+			int err = snd_pcm_open(&handle, "plughw:1,0", SND_PCM_STREAM_PLAYBACK, 0);
 
 			if(err >= 0)
 			{
@@ -38,7 +38,7 @@ namespace aal
 			}
 			else
 			{
-				throw -1;
+				throw std::runtime_error("Couldn't open device.");
 			}
 
 			device_thread = std::thread(&device::thread, this);
@@ -62,7 +62,18 @@ namespace aal
 
 		voice play_sound(source& source)
 		{
-			sources.push_back(&source);
+
+			auto empty_src = std::find(sources.begin(), sources.end(), nullptr);
+
+			if(empty_src != sources.end())
+			{
+				*empty_src = &source;
+			}
+			else
+			{
+				sources.push_back(&source);
+			}
+
 			return voice{source};
 		}
 
@@ -79,13 +90,23 @@ namespace aal
 				{
 
 					std::fill(internal_buffer.begin(), internal_buffer.end(), 0);
-					for(const auto& s : sources)
+					for(source* s : sources)
 					{
-						for(size_t i = 0; i < period_length; ++i)
+						if(s != nullptr)
 						{
-							internal_buffer[i] += s->get_chunk(i);
+							if(!s->is_over())
+							{
+								for(size_t i = 0; i < period_length; ++i)
+								{
+									internal_buffer[i] += s->get_chunk(i);
+								}
+								s->update_index(period_length);
+							}
+							else
+							{
+								s = nullptr;
+							}
 						}
-						s->update_index(period_length);
 					}
 
 					int err = snd_pcm_writei(handle, internal_buffer.data(), frames);
@@ -97,7 +118,7 @@ namespace aal
 
 					if (err < 0)
 					{
-						//XrunRecovery(err);
+						XrunRecovery(err);
 					}
 
 					frames -= err;
