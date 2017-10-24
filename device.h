@@ -72,10 +72,6 @@ namespace aal
 				{
 					break;
 				}
-				else
-				{
-					throw std::runtime_error("Too many sounds.");
-				}
 			}
 
 			return voice{src};
@@ -107,9 +103,9 @@ namespace aal
 								auto length = size_t{period_length};
 								auto* ptr_buf = src_ptr->get_chunk(length);
 
-								for(size_t i = 0; i < length; ++i)
+								for(size_t x = 0; x < length; ++x)
 								{
-									internal_buffer[i] += *(ptr_buf + i);
+									internal_buffer[x] += *(ptr_buf + x);
 								}
 							}
 							else
