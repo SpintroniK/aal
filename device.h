@@ -65,6 +65,8 @@ namespace aal
 		voice play_sound(source& src)
 		{
 
+			src.play();
+
 			for(size_t i = 0; i < sources.size(); ++i)
 			{
 				source* src_nullptr = nullptr;
@@ -101,7 +103,7 @@ namespace aal
 							if(src_ptr->is_playing())
 							{
 								auto length = size_t{period_length};
-								auto* ptr_buf = src_ptr->get_chunk(length);
+								auto ptr_buf = src_ptr->get_chunk(length);
 
 								for(size_t x = 0; x < length; ++x)
 								{

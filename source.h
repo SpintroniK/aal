@@ -12,16 +12,19 @@
 #include <string>
 #include <vector>
 #include <atomic>
+#include <iostream>
 
 namespace aal
 {
 
 	class device;
+	class voice;
 
 	class source
 	{
 
 		friend class device;
+		friend class voice;
 
 	public:
 
@@ -33,24 +36,27 @@ namespace aal
 		{
 
 			const auto data_length = data.size();
-			const auto old_index = index;
+			auto old_index = index.fetch_add(length, std::memory_order_release);
 
 			// Truncate if length is greater than the buffer's size
-			if(index + length > data_length)
+			if(old_index + length > data_length)
 			{
-				length = std::min(data_length, data_length - index);
+				length = data_length - old_index;
+				index.store(data_length, std::memory_order_release);
 				playing.store(false, std::memory_order_release);
 			}
 
-			index = old_index + length;
-			return &data[index];
+			return &data[old_index];
 		}
 
-		virtual bool is_playing() const { return playing.load(std::memory_order_acquire); }
+		virtual bool is_playing() const noexcept { return playing.load(std::memory_order_acquire); }
 
 	protected:
 
-		mutable size_t index;
+		virtual void play() noexcept { playing.store(true, std::memory_order_release); }
+		virtual void stop() noexcept { playing.store(false, std::memory_order_release);}
+
+		mutable std::atomic<size_t> index;
 		mutable std::atomic<bool> playing;
 		std::vector<short> data;
 

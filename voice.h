@@ -17,17 +17,18 @@ namespace aal
 	{
 	public:
 
-		voice(const source& s) : src(s)
+		voice(source& s) : src(s)
 		{
 
 		}
 		~voice(){}
 
-		bool is_playing() { return src.is_playing(); }
+		bool is_playing() const noexcept { return src.is_playing(); }
+		void stop() const noexcept { src.stop(); }
 
 	private:
 
-		const source& src;
+		source& src;
 
 	};
 
