@@ -26,7 +26,7 @@ namespace aal
 
 	public:
 
-		device() : run_thread(true)
+		device() : run_thread(true), sources(32)
 		{
 
 			int err = snd_pcm_open(&handle, "plughw:1,0", SND_PCM_STREAM_PLAYBACK, 0);
@@ -40,6 +40,8 @@ namespace aal
 			{
 				throw std::runtime_error("Couldn't open device.");
 			}
+
+			std::for_each(sources.begin(), sources.end(), [](auto& source) { source.store(nullptr, std::memory_order_release); });
 
 			device_thread = std::thread(&device::thread, this);
 
@@ -60,21 +62,23 @@ namespace aal
 			snd_pcm_close(handle);
 		}
 
-		voice play_sound(source& source)
+		voice play_sound(source& src)
 		{
 
-			auto empty_src = std::find(sources.begin(), sources.end(), nullptr);
-
-			if(empty_src != sources.end())
+			for(size_t i = 0; i < sources.size(); ++i)
 			{
-				*empty_src = &source;
-			}
-			else
-			{
-				sources.push_back(&source);
+				source* src_nullptr = nullptr;
+				if(sources[i].compare_exchange_strong(src_nullptr, &src))
+				{
+					break;
+				}
+				else
+				{
+					throw std::runtime_error("Too many sounds.");
+				}
 			}
 
-			return voice{source};
+			return voice{src};
 		}
 
 	private:
@@ -90,21 +94,27 @@ namespace aal
 				{
 
 					std::fill(internal_buffer.begin(), internal_buffer.end(), 0);
-					for(source* s : sources)
+
+					for(size_t i = 0; i < sources.size(); ++i)
 					{
-						if(s != nullptr)
+
+						source* src_ptr = nullptr;
+
+						if(!sources[i].compare_exchange_strong(src_ptr, nullptr))
 						{
-							if(!s->is_over())
+							if(!src_ptr->is_over())
 							{
-								for(size_t i = 0; i < period_length; ++i)
+								auto length = size_t{period_length};
+								auto* ptr_buf = src_ptr->get_chunk(length);
+
+								for(size_t i = 0; i < length; ++i)
 								{
-									internal_buffer[i] += s->get_chunk(i);
+									internal_buffer[i] += *(ptr_buf + i);
 								}
-								s->update_index(period_length);
 							}
 							else
 							{
-								s = nullptr;
+								sources[i].store(nullptr, std::memory_order_release);
 							}
 						}
 					}
@@ -118,7 +128,7 @@ namespace aal
 
 					if (err < 0)
 					{
-						XrunRecovery(err);
+						xrun_ecovery(err);
 					}
 
 					frames -= err;
@@ -163,7 +173,7 @@ namespace aal
 			return 0;
 		}
 
-		void XrunRecovery(int& err)
+		void xrun_ecovery(int& err)
 		{
 			using namespace std::literals::chrono_literals;
 
@@ -192,13 +202,13 @@ namespace aal
 		std::thread device_thread;
 		std::vector<short> internal_buffer;
 
-		std::vector<source*> sources;
+		std::vector<std::atomic<source*>> sources;
 
 		// Low level
 		snd_pcm_t* handle;
 		snd_pcm_hw_params_t* hwParams;
-		unsigned int buffer_length = 5000;
-		unsigned int period_length = 2500;
+		unsigned int buffer_length = 10000;
+		unsigned int period_length = 5000;
 
 	};
 

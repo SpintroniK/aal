@@ -5,10 +5,10 @@
  *      Author: jeremy
  */
 
-#ifndef AAL_H_
-#define AAL_H_
+#ifndef AUDIO_H_
+#define AUDIO_H_
 
 #include "device.h"
 
 
-#endif /* AAL_H_ */
+#endif /* AUDIO_H_ */

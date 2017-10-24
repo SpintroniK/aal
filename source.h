@@ -25,16 +25,33 @@ namespace aal
 
 	public:
 
-		source() : index{0} {}
+		source() : index{0}, playing{true} {}
 		virtual ~source(){}
 
-		virtual void update_index(size_t increment) { index.fetch_add(increment, std::memory_order_acq_rel); }
-		virtual short get_chunk(size_t i) const { return (i + index.load(std::memory_order_acquire)<data.size())? data[index + i] : 0; }
-		virtual bool is_over() const { return index.load(std::memory_order_acquire) >= data.size(); }
+
+		virtual const short* get_chunk(size_t& length) const noexcept
+		{
+
+			const auto data_length = data.size();
+			const auto old_index = index;
+
+			// Truncate if length is greater than the buffer's size
+			if(index + length > data_length)
+			{
+				length = std::min(data_length, data_length - index);
+				playing.store(false, std::memory_order_release);
+			}
+
+			index = old_index + length;
+			return &data[index];
+		}
+
+		virtual bool is_over() const { return !playing.load(std::memory_order_acquire); }
 
 	protected:
 
-		std::atomic<size_t> index;
+		mutable size_t index;
+		mutable std::atomic<bool> playing;
 		std::vector<short> data;
 
 	};
