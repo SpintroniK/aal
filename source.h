@@ -46,7 +46,7 @@ namespace aal
 			return &data[index];
 		}
 
-		virtual bool is_over() const { return !playing.load(std::memory_order_acquire); }
+		virtual bool is_playing() const { return playing.load(std::memory_order_acquire); }
 
 	protected:
 

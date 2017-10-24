@@ -21,12 +21,12 @@ int main(int argc, char* argv[])
 		aal::device device;
 
 		aal::buffer buf{"/home/jeremy/Desktop/Prog/eXaDrums/eXaDrums/Data/SoundBank/HiHat/hihat.raw"};
-		aal::buffer buf2{"/home/jeremy/Desktop/Prog/eXaDrums/eXaDrums/Data/SoundBank/HiHat/HH_TB.raw"};
+		aal::buffer buf2{"/home/jeremy/Desktop/Prog/eXaDrums/eXaDrums/Data/SoundBank/SnareDrum/SD_TB.raw"};
 
 		aal::voice v{device.play_sound(buf)};
 		aal::voice v2{device.play_sound(buf2)};
 
-		while(v.is_playing() || v2.is_playing())
+		while(v.is_playing())
 		{
 			std::this_thread::sleep_for(100ms);
 		}

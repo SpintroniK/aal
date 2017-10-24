@@ -98,7 +98,7 @@ namespace aal
 
 						if(!sources[i].compare_exchange_strong(src_ptr, nullptr))
 						{
-							if(!src_ptr->is_over())
+							if(src_ptr->is_playing())
 							{
 								auto length = size_t{period_length};
 								auto* ptr_buf = src_ptr->get_chunk(length);

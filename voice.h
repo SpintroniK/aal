@@ -23,7 +23,7 @@ namespace aal
 		}
 		~voice(){}
 
-		bool is_playing() { return !src.is_over(); }
+		bool is_playing() { return src.is_playing(); }
 
 	private:
 
