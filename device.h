@@ -8,15 +8,13 @@
 #ifndef DEVICE_H_
 #define DEVICE_H_
 
+#include "driver.h"
 #include "voice.h"
-#include "alsa/asoundlib.h"
+#include "source.h"
 
 #include <thread>
 #include <algorithm>
 #include <atomic>
-#include <iostream>
-#include <chrono>
-#include "source.h"
 
 namespace aal
 {
@@ -26,24 +24,14 @@ namespace aal
 
 	public:
 
-		device() : run_thread(true), sources(32)
+		device() : run_thread(true), internal_buffer(audio_driver.buffer_size()), sources(32)
 		{
 
-			int err = snd_pcm_open(&handle, "plughw:1,0", SND_PCM_STREAM_PLAYBACK, 0);
 
-			if(err >= 0)
-			{
-				snd_pcm_hw_params_alloca(&hwParams);
-				SetHwParams();
-			}
-			else
-			{
-				throw std::runtime_error("Couldn't open device.");
-			}
 
 			std::for_each(sources.begin(), sources.end(), [](auto& source) { source.store(nullptr, std::memory_order_release); });
 
-			device_thread = std::thread(&device::thread, this);
+			device_thread = std::thread(&device::device_thread_loop, this);
 
 			// Set maximum priority to the thread
 	        sched_param sch_params;
@@ -51,15 +39,12 @@ namespace aal
 
 	        pthread_setschedparam(device_thread.native_handle(), SCHED_FIFO, &sch_params);
 
-
 		}
 
 		~device()
 		{
-			run_thread.store(false);
+			run_thread.store(false, std::memory_order_release);
 			device_thread.join();
-			snd_pcm_drain(handle);
-			snd_pcm_close(handle);
 		}
 
 		voice play_sound(source& src)
@@ -81,12 +66,13 @@ namespace aal
 
 	private:
 
-		void thread() noexcept
+		void device_thread_loop() noexcept
 		{
-			while(run_thread.load())
+
+			while(run_thread.load(std::memory_order_acquire))
 			{
 
-				int frames = period_length;
+				auto frames = audio_driver.buffer_size();
 
 				while(frames > 0)
 				{
@@ -102,7 +88,7 @@ namespace aal
 						{
 							if(src_ptr->is_playing())
 							{
-								auto length = size_t{period_length};
+								auto length = audio_driver.buffer_size();
 								auto ptr_buf = src_ptr->get_chunk(length);
 
 								for(size_t x = 0; x < length; ++x)
@@ -117,96 +103,18 @@ namespace aal
 						}
 					}
 
-					int err = snd_pcm_writei(handle, internal_buffer.data(), frames);
-
-					if (err == -EAGAIN)
-					{
-						continue;
-					}
-
-					if (err < 0)
-					{
-						xrun_ecovery(err);
-					}
-
-					frames -= err;
-
+					frames -= audio_driver.write(internal_buffer.data(), frames);
 				}
 			}
 		}
 
-		int SetHwParams()
-		{
-
-			unsigned int realRate;
-			snd_pcm_uframes_t size;
-			int dir;
-
-			snd_pcm_hw_params_any(handle, hwParams);
-			snd_pcm_hw_params_set_rate_resample(handle, hwParams, 1);
-			snd_pcm_hw_params_set_access(handle, hwParams, SND_PCM_ACCESS_RW_INTERLEAVED);
-			snd_pcm_hw_params_set_format(handle, hwParams, SND_PCM_FORMAT_S16_LE);
-			snd_pcm_hw_params_set_channels(handle, hwParams, 1);
-
-			realRate = 48000;
-
-			snd_pcm_hw_params_set_rate_near(handle, hwParams, &realRate, 0);
-
-			snd_pcm_hw_params_set_buffer_time_near(handle, hwParams, &buffer_length, &dir);
-
-			snd_pcm_hw_params_get_buffer_size(hwParams, &size);
-
-			buffer_length = size;
-
-			unsigned int periodTime;
-			snd_pcm_hw_params_set_period_time_near(handle, hwParams, &periodTime, &dir);
-			snd_pcm_hw_params_get_period_size(hwParams, &size, &dir);
-
-			period_length = size;
-			internal_buffer.resize(size);
-
-			snd_pcm_hw_params(handle, hwParams);
-
-
-			return 0;
-		}
-
-		void xrun_ecovery(int& err)
-		{
-			using namespace std::literals::chrono_literals;
-
-			if (err == -EPIPE)
-			{
-				err = snd_pcm_prepare(handle);
-			}
-			else if (err == -ESTRPIPE)
-			{
-
-				while ((err = snd_pcm_resume(handle)) == -EAGAIN)
-				{
-					std::this_thread::sleep_for(1ms);
-				}
-
-				if (err < 0)
-				{
-					err = snd_pcm_prepare(handle);
-				}
-			}
-
-			return;
-		}
+		driver audio_driver;
 
 		std::atomic<bool> run_thread;
 		std::thread device_thread;
+
 		std::vector<short> internal_buffer;
-
 		std::vector<std::atomic<source*>> sources;
-
-		// Low level
-		snd_pcm_t* handle;
-		snd_pcm_hw_params_t* hwParams;
-		unsigned int buffer_length = 10000;
-		unsigned int period_length = 5000;
 
 	};
 

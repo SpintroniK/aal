@@ -12,7 +12,6 @@
 #include <string>
 #include <vector>
 #include <atomic>
-#include <iostream>
 
 namespace aal
 {
@@ -75,8 +74,6 @@ namespace aal
 		virtual ~buffer(){}
 
 	private:
-
-
 
 		bool load_from_disk(const std::string& fileLocation)
 		{
