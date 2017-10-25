@@ -50,9 +50,9 @@ namespace aal
 		{
 			int err = snd_pcm_writei(handle, data_ptr, frames);
 
-			if (err < 0)
+			if(err < 0)
 			{
-				xrun_ecovery(err);
+				xrun_recovery(err);
 			}
 
 			return err;
@@ -95,7 +95,7 @@ namespace aal
 			return 0;
 		}
 
-		void xrun_ecovery(int& err) const noexcept
+		void xrun_recovery(int& err) const noexcept
 		{
 			using namespace std::literals::chrono_literals;
 

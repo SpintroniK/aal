@@ -11,6 +11,7 @@
 #include "driver.h"
 #include "voice.h"
 #include "source.h"
+#include "buffer.h"
 
 #include <thread>
 #include <algorithm>
@@ -26,8 +27,6 @@ namespace aal
 
 		device() : run_thread(true), internal_buffer(audio_driver.period_size()), sources(32)
 		{
-
-
 
 			std::for_each(sources.begin(), sources.end(), [](auto& source) { source.store(nullptr, std::memory_order_release); });
 
