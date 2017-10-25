@@ -43,9 +43,10 @@ namespace aal
 			snd_pcm_close(handle);
 		}
 
-		size_t buffer_size() const noexcept { return static_cast<size_t>(period_length); }
+		size_t period_size() const noexcept { return _period_size; }
 
-		int write(short* data_ptr, size_t frames) const noexcept
+		template <typename T>
+		int write(T data_ptr, size_t frames) const noexcept
 		{
 			int err = snd_pcm_writei(handle, data_ptr, frames);
 
@@ -63,7 +64,7 @@ namespace aal
 		int set_hw_parameters()
 		{
 
-			unsigned int realRate;
+			unsigned int sample_rate;
 			snd_pcm_uframes_t size;
 			int dir;
 
@@ -73,21 +74,20 @@ namespace aal
 			snd_pcm_hw_params_set_format(handle, hw_parameters, SND_PCM_FORMAT_S16_LE);
 			snd_pcm_hw_params_set_channels(handle, hw_parameters, 1);
 
-			realRate = 48000;
+			sample_rate = 48000;
 
-			snd_pcm_hw_params_set_rate_near(handle, hw_parameters, &realRate, 0);
+			snd_pcm_hw_params_set_rate_near(handle, hw_parameters, &sample_rate, 0);
 
-			snd_pcm_hw_params_set_buffer_time_near(handle, hw_parameters, &buffer_length, &dir);
+			snd_pcm_hw_params_set_buffer_time_near(handle, hw_parameters, &buffer_time, &dir);
 
 			snd_pcm_hw_params_get_buffer_size(hw_parameters, &size);
 
-			buffer_length = size;
+			_buffer_size = static_cast<size_t>(size);
 
-			unsigned int periodTime;
-			snd_pcm_hw_params_set_period_time_near(handle, hw_parameters, &periodTime, &dir);
+			snd_pcm_hw_params_set_period_time_near(handle, hw_parameters, &period_time, &dir);
 			snd_pcm_hw_params_get_period_size(hw_parameters, &size, &dir);
 
-			period_length = size;
+			_period_size = static_cast<size_t>(size);
 
 			snd_pcm_hw_params(handle, hw_parameters);
 
@@ -124,8 +124,10 @@ namespace aal
 		snd_pcm_t* handle;
 		snd_pcm_hw_params_t* hw_parameters;
 
-		unsigned int buffer_length = 20000;
-		unsigned int period_length = 10000;
+		unsigned int buffer_time = 20000;
+		unsigned int period_time = 10000;
+		size_t _buffer_size;
+		size_t _period_size;
 
 	};
 

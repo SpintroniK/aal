@@ -24,7 +24,7 @@ namespace aal
 
 	public:
 
-		device() : run_thread(true), internal_buffer(audio_driver.buffer_size()), sources(32)
+		device() : run_thread(true), internal_buffer(audio_driver.period_size()), sources(32)
 		{
 
 
@@ -72,7 +72,7 @@ namespace aal
 			while(run_thread.load(std::memory_order_acquire))
 			{
 
-				auto frames = audio_driver.buffer_size();
+				auto frames = audio_driver.period_size();
 
 				while(frames > 0)
 				{
@@ -88,7 +88,7 @@ namespace aal
 						{
 							if(src_ptr->is_playing())
 							{
-								auto length = audio_driver.buffer_size();
+								auto length = audio_driver.period_size();
 								auto ptr_buf = src_ptr->get_chunk(length);
 
 								for(size_t x = 0; x < length; ++x)
