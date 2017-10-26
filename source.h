@@ -52,7 +52,12 @@ namespace aal
 
 	protected:
 
-		virtual void play() noexcept { playing.store(true, std::memory_order_release); }
+		virtual void play() noexcept
+		{
+			index.store(0, std::memory_order_release);
+			playing.store(true, std::memory_order_release);
+		}
+
 		virtual void stop() noexcept { playing.store(false, std::memory_order_release);}
 
 		mutable std::atomic<size_t> index;

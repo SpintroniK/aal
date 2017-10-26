@@ -25,7 +25,7 @@ namespace aal
 
 	public:
 
-		device() : run_thread(true), internal_buffer(audio_driver.period_size()), sources(32)
+		device() : run_thread(true), internal_buffer(audio_driver.period_size()), sources(64)
 		{
 
 			std::for_each(sources.begin(), sources.end(), [](auto& source) { source.store(nullptr, std::memory_order_release); });
@@ -45,6 +45,7 @@ namespace aal
 			run_thread.store(false, std::memory_order_release);
 			device_thread.join();
 		}
+
 
 		voice play_sound(source& src)
 		{

@@ -22,14 +22,20 @@ namespace aal
 
 	public:
 
-		buffer(const std::string& file_location)
+		buffer(const std::string& file_location) : _file_location(file_location)
 		{
 			load_from_disk(file_location);
+		}
+
+		buffer(const buffer& b)
+		{
+			this->data = b.data;
 		}
 
 		virtual ~buffer(){}
 
 	private:
+
 
 		bool load_from_disk(const std::string& fileLocation)
 		{
@@ -57,6 +63,8 @@ namespace aal
 
 			return true;
 		}
+
+		std::string _file_location;
 
 	};
 

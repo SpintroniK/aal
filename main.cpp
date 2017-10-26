@@ -18,17 +18,21 @@ int main(int argc, char* argv[])
 
 //	try
 //	{
-		aal::device device;
-
 		aal::buffer buf{"/home/jeremy/Desktop/Prog/eXaDrums/eXaDrums/Data/SoundBank/HiHat/hihat.raw"};
-		aal::buffer buf2{"/home/jeremy/Desktop/Prog/eXaDrums/eXaDrums/Data/SoundBank/SnareDrum/SD_TB.raw"};
+		aal::buffer buf2{"/home/jeremy/Desktop/Prog/eXaDrums/eXaDrums/Data/SoundBank/SnareDrum/snare1.raw"};
+		std::vector<aal::buffer> vbuf(64, buf2);
+
+		aal::device device;
 
 		aal::voice v{device.play_sound(buf)};
 		aal::voice v2{device.play_sound(buf2)};
 
-		while(v.is_playing())
+		size_t i = 0;
+		while(v.is_playing() && i < vbuf.size())
 		{
-			std::this_thread::sleep_for(100ms);
+			std::this_thread::sleep_for(200ms);
+			device.play_sound(vbuf[i]);
+			i++;
 		}
 //	}
 //	catch(const std::exception& e)
