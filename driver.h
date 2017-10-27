@@ -74,7 +74,7 @@ namespace aal
 			snd_pcm_hw_params_set_format(handle, hw_parameters, SND_PCM_FORMAT_S16_LE);
 			snd_pcm_hw_params_set_channels(handle, hw_parameters, 1);
 
-			sample_rate = 48000;
+			sample_rate = 44100;
 
 			snd_pcm_hw_params_set_rate_near(handle, hw_parameters, &sample_rate, 0);
 
@@ -124,8 +124,8 @@ namespace aal
 		snd_pcm_t* handle;
 		snd_pcm_hw_params_t* hw_parameters;
 
-		unsigned int buffer_time = 20000;
-		unsigned int period_time = 10000;
+		unsigned int buffer_time = 40000;
+		unsigned int period_time = 20000;
 		size_t _buffer_size;
 		size_t _period_size;
 

@@ -27,7 +27,7 @@ namespace aal
 
 	public:
 
-		source() : index{0}, playing{true} {}
+		source() : index{0}, playing{true}, is_loop{false} {}
 		virtual ~source(){}
 
 
@@ -38,17 +38,26 @@ namespace aal
 			auto old_index = index.fetch_add(length, std::memory_order_release);
 
 			// Truncate if length is greater than the buffer's size
-			if(old_index + length > data_length)
+			if(old_index + length >= data_length)
 			{
 				length = data_length - old_index;
-				index.store(data_length, std::memory_order_release);
-				playing.store(false, std::memory_order_release);
+
+				if(is_loop.load(std::memory_order_acquire))
+				{
+					index.store(0, std::memory_order_release);
+				}
+				else
+				{
+					index.store(length, std::memory_order_release);
+					playing.store(false, std::memory_order_release);
+				}
 			}
 
 			return &data[old_index];
 		}
 
 		virtual bool is_playing() const noexcept { return playing.load(std::memory_order_acquire); }
+		virtual bool is_circular() const noexcept { return is_loop.load(std::memory_order_acquire); }
 
 	protected:
 
@@ -62,6 +71,7 @@ namespace aal
 
 		mutable std::atomic<size_t> index;
 		mutable std::atomic<bool> playing;
+		std::atomic<bool> is_loop;
 		std::vector<short> data;
 
 	};

@@ -12,6 +12,7 @@
 #include "voice.h"
 #include "source.h"
 #include "buffer.h"
+#include "doublebuf.h"
 
 #include <thread>
 #include <algorithm>
@@ -25,7 +26,7 @@ namespace aal
 
 	public:
 
-		device() : run_thread(true), internal_buffer(audio_driver.period_size()), sources(64)
+		device() : run_thread(true), internal_buffer(audio_driver.period_size()), sources(32)
 		{
 
 			std::for_each(sources.begin(), sources.end(), [](auto& source) { source.store(nullptr, std::memory_order_release); });
@@ -94,6 +95,16 @@ namespace aal
 								for(size_t x = 0; x < length; ++x)
 								{
 									internal_buffer[x] += *(ptr_buf + x);
+								}
+
+								if(length < audio_driver.period_size() && src_ptr->is_circular())
+								{
+									auto delta = frames - length;
+									auto ptr_buf = src_ptr->get_chunk(delta);
+									for(size_t x = 0; x < delta; ++x)
+									{
+										internal_buffer[x + length] += *(ptr_buf + x);
+									}
 								}
 							}
 							else
