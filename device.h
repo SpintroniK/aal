@@ -26,7 +26,7 @@ namespace aal
 
 	public:
 
-		device() : run_thread(true), internal_buffer(audio_driver.period_size()), sources(32)
+		device() : run_thread(true), internal_buffer(audio_driver.period_size()), temp_buffer(internal_buffer.size()), sources(32)
 		{
 
 			std::for_each(sources.begin(), sources.end(), [](auto& source) { source.store(nullptr, std::memory_order_release); });
@@ -73,7 +73,7 @@ namespace aal
 			while(run_thread.load(std::memory_order_acquire))
 			{
 
-				auto frames = audio_driver.period_size();
+				auto frames = audio_driver.period_size(); ///2;
 
 				while(frames > 0)
 				{
@@ -90,21 +90,12 @@ namespace aal
 							if(src_ptr->is_playing())
 							{
 								auto length = audio_driver.period_size();
-								auto ptr_buf = src_ptr->get_chunk(length);
-
-								for(size_t x = 0; x < length; ++x)
-								{
-									internal_buffer[x] += *(ptr_buf + x);
-								}
+								mix_buffer(src_ptr, length);
 
 								if(length < audio_driver.period_size() && src_ptr->is_circular())
 								{
 									auto delta = frames - length;
-									auto ptr_buf = src_ptr->get_chunk(delta);
-									for(size_t x = 0; x < delta; ++x)
-									{
-										internal_buffer[x + length] += *(ptr_buf + x);
-									}
+									mix_buffer(src_ptr, delta, length);
 								}
 							}
 							else
@@ -119,12 +110,41 @@ namespace aal
 			}
 		}
 
+		inline void mix_buffer(source* src_ptr, size_t& length, size_t offset = 0) noexcept
+		{
+
+			auto ptr_buf = src_ptr->get_chunk(length);
+
+			if(!src_ptr->effects.empty())
+			{
+				// Apply effects
+				for(auto e : src_ptr->effects)
+				{
+					e->process(ptr_buf, temp_buffer.data(), length);
+				}
+
+				for(size_t x = 0; x < length; ++x)
+				{
+					internal_buffer[x + offset] += temp_buffer[x];
+				}
+			}
+			else
+			{
+				for(size_t x = 0; x < length; ++x)
+				{
+					internal_buffer[x + offset] += *(ptr_buf + x);
+				}
+			}
+
+		}
+
 		driver audio_driver;
 
 		std::atomic<bool> run_thread;
 		std::thread device_thread;
 
 		std::vector<short> internal_buffer;
+		std::vector<short> temp_buffer;
 		std::vector<std::atomic<source*>> sources;
 
 	};

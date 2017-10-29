@@ -9,9 +9,11 @@
 #define SOURCE_H_
 
 
+#include "effect.h"
 #include <string>
 #include <vector>
 #include <atomic>
+#include <algorithm>
 
 namespace aal
 {
@@ -28,7 +30,11 @@ namespace aal
 	public:
 
 		source() : index{0}, playing{true}, is_loop{false} {}
-		virtual ~source(){}
+		virtual ~source()
+		{
+			// Delete all the effects
+			std::for_each(effects.begin(), effects.end(), [](auto e) { delete e; });
+		}
 
 
 		virtual const short* get_chunk(size_t& length) const noexcept
@@ -58,6 +64,7 @@ namespace aal
 
 		virtual bool is_playing() const noexcept { return playing.load(std::memory_order_acquire); }
 		virtual bool is_circular() const noexcept { return is_loop.load(std::memory_order_acquire); }
+		virtual void add_effect(effect* e) { effects.push_back(e); }
 
 	protected:
 
@@ -73,6 +80,7 @@ namespace aal
 		mutable std::atomic<bool> playing;
 		std::atomic<bool> is_loop;
 		std::vector<short> data;
+		std::vector<effect*> effects;
 
 	};
 

@@ -8,7 +8,11 @@
 #ifndef VOICE_H_
 #define VOICE_H_
 
+#include "effect.h"
+#include "effects_instances.h"
 #include "source.h"
+#include <algorithm>
+#include <vector>
 
 namespace aal
 {
@@ -17,15 +21,21 @@ namespace aal
 	{
 	public:
 
-		voice(source& s) : src(s) {}
+		voice(source& s) : src(&s) {}
 		~voice() {}
 
-		bool is_playing() const noexcept { return src.is_playing(); }
-		void stop() const noexcept { src.stop(); }
+		bool is_playing() const noexcept { return src->is_playing(); }
+		void stop() const noexcept { src->stop(); }
+
+		template <class T>
+		void add_effect()
+		{
+			src->add_effect(new T()); // Memory leak!!!!
+		}
 
 	private:
 
-		source& src;
+		source* src;
 
 	};
 
