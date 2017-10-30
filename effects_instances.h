@@ -21,11 +21,11 @@ namespace aal
 		Amplify(){}
 		virtual ~Amplify(){}
 
-		virtual void process(const short* buffer_in, short* buffer_out, size_t length_samples) final
+		virtual void process(const short* buffer_in, short* buffer_out, size_t length_samples) const noexcept final
 		{
 			for(size_t i = 0; i < length_samples; ++i)
 			{
-				buffer_out[i] = buffer_in[i] * 2;
+				buffer_out[i] = buffer_in[i] / 2;
 			}
 		}
 

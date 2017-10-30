@@ -115,7 +115,7 @@ namespace aal
 
 			auto ptr_buf = src_ptr->get_chunk(length);
 
-			if(!src_ptr->effects.empty())
+			if(!src_ptr->effects.empty()) // Probably not thread-safe.
 			{
 				// Apply effects
 				for(auto e : src_ptr->effects)

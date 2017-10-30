@@ -21,7 +21,7 @@ namespace aal
 		effect() {}
 		virtual ~effect() {}
 
-		virtual void process(const short* buffer_in, short* buffer_out, size_t length_samples) = 0;
+		virtual void process(const short* buffer_in, short* buffer_out, size_t length_samples) const noexcept = 0;
 
 	private:
 

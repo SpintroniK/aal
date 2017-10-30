@@ -9,6 +9,7 @@
 #define BUFFER_H_
 
 #include "source.h"
+#include "utilities.h"
 
 #include <string>
 #include <fstream>
@@ -24,7 +25,8 @@ namespace aal
 
 		buffer(const std::string& file_location) : _file_location(file_location)
 		{
-			load_from_disk(file_location);
+			//load_from_disk(file_location);
+			data = load_wav_from_disk(file_location);
 		}
 
 		buffer(const buffer& b)

@@ -30,7 +30,7 @@ namespace aal
 		template <class T>
 		void add_effect()
 		{
-			src->add_effect(new T()); // Memory leak!!!!
+			src->add_effect(new T());
 		}
 
 	private:

@@ -9,6 +9,7 @@
 #define AUDIO_H_
 
 #include "device.h"
+#include "utilities.h"
 
 
 #endif /* AUDIO_H_ */
