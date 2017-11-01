@@ -73,7 +73,7 @@ namespace aal
 			while(run_thread.load(std::memory_order_acquire))
 			{
 
-				auto frames = audio_driver.period_size(); ///2;
+				auto frames = audio_driver.period_size() / audio_driver.get_num_channels();
 
 				while(frames > 0)
 				{

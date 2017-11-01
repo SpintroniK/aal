@@ -11,48 +11,82 @@
 #include <vector>
 #include <fstream>
 #include <string>
+#include <numeric>
 #include <cstdint>
 
 namespace aal
 {
 
-	enum class Endianness
+	template <typename T>
+	inline T bytes_to_word(const std::vector<uint8_t>& bytes)
 	{
-		LittleEndian,
-		BugEndian
+		return std::accumulate(bytes.rbegin(), bytes.rend(), T{0}, [](T a, T b) { return a << 8 | b; });
+	}
+
+	template <typename T>
+	inline std::vector<T> subvector(const std::vector<T>& vec, size_t i, size_t j)
+	{
+		return std::vector<T>(vec.begin() + i, vec.begin() + j);
+	}
+
+	inline std::string bytes_to_string(const std::vector<uint8_t>& bytes, size_t start = 0, size_t stop = 0)
+	{
+		if(stop == 0)
+		{
+			stop  = bytes.size();
+		}
+		return std::string(bytes.begin() + start, bytes.begin() + stop);
+	}
+
+	class wav_header
+	{
+
+	public:
+
+		wav_header(const std::vector<uint8_t>& header_data)
+		: chunk_id(bytes_to_string(header_data, 0, 4)),
+		  format(bytes_to_string(header_data, 8, 12)),
+		  subchunk1_id(bytes_to_string(header_data, 12, 16)),
+		  subchunk2_id(bytes_to_string(header_data, 36, 40))
+		{
+
+			chunk_size 		= bytes_to_word<uint32_t>(subvector(header_data, 4, 8));
+			subchunk1_size 	= bytes_to_word<uint32_t>(subvector(header_data, 16, 20));
+			audio_format 	= bytes_to_word<uint16_t>(subvector(header_data, 20, 22));
+			num_channels 	= bytes_to_word<uint16_t>(subvector(header_data, 22, 24));
+			sample_rate 	= bytes_to_word<uint32_t>(subvector(header_data, 24, 28));
+			byte_rate		= bytes_to_word<uint32_t>(subvector(header_data, 28, 32));
+			block_align		= bytes_to_word<uint16_t>(subvector(header_data, 32, 34));
+			bits_per_sample	= bytes_to_word<uint16_t>(subvector(header_data, 34, 36));
+			subchunk2_size 	= bytes_to_word<uint32_t>(subvector(header_data, 40, 44));
+
+		}
+
+		inline uint32_t get_subchunk2_size() const noexcept { return subchunk2_size; }
+
+		~wav_header() = default;
+
+	private:
+
+		wav_header() = delete;
+
+		std::string chunk_id;
+		uint32_t chunk_size;
+		std::string format;
+
+		std::string subchunk1_id;
+		uint32_t subchunk1_size;
+		uint16_t audio_format;
+		uint16_t num_channels;
+		uint32_t sample_rate;
+		uint32_t byte_rate;
+		uint16_t block_align;
+		uint16_t bits_per_sample;
+
+		std::string subchunk2_id;
+		uint32_t subchunk2_size;
+
 	};
-
-	int32_t bytes_to_int32(std::vector<uint8_t>& source, Endianness endianness)
-	{
-		int32_t result;
-
-		if(endianness == Endianness::LittleEndian)
-		{
-			result = (source[3] << 24) | (source[2] << 16) | (source[1] << 8) | source[0];
-		}
-		else
-		{
-			result = (source[0] << 24) | (source[1] << 16) | (source[2] << 8) | source[3];
-		}
-
-		return result;
-	}
-
-	int16_t bytes_to_int16(std::vector<uint8_t>& source, Endianness endianness)
-	{
-	    int16_t result;
-
-	    if(endianness == Endianness::LittleEndian)
-	    {
-	        result = (source[1] << 8) | source[0];
-	    }
-	    else
-	    {
-	        result = (source[0] << 8) | source[1];
-	    }
-
-	    return result;
-	}
 
 	static std::vector<short> load_wav_from_disk(const std::string& file_location)
 	{
@@ -67,32 +101,17 @@ namespace aal
 		}
 
 		// HEADER
-		uint32_t data_size = 0;
-		{
-			std::vector<uint8_t> header_data(44);
-
-			file.read((char*)header_data.data(), header_data.size());
-
-			std::string chunk_id(header_data.begin(), header_data.begin() + 4);
-			std::string format(header_data.begin() + 8, header_data.begin() + 12);
-
-//			std::vector<uint8_t> num_channels_data(header_data.begin() + 22, header_data.begin() + 24);
-//			uint16_t num_channels = (uint16_t) bytes_to_int16(num_channels_data, Endianness::LittleEndian);
-//
-//			std::vector<uint8_t> sample_rate_data(header_data.begin() + 24, header_data.begin() + 28);
-//			uint32_t sample_rate = (uint32_t) bytes_to_int32(sample_rate_data, Endianness::LittleEndian);
-
-			std::vector<uint8_t> data_data_size(header_data.begin() + 40, header_data.begin() + 44);
-			data_size = (uint32_t) bytes_to_int32(data_data_size, Endianness::LittleEndian);
-
-
-		}
+		std::vector<uint8_t> header_data(44);
+		file.read((char*)header_data.data(), header_data.size());
+		wav_header header(header_data);
 
 		// DATA
+		auto data_size{header.get_subchunk2_size()};
+
 		uint32_t data_size_short = data_size / sizeof(short);
 		std::vector<short> data(data_size_short);
 
-		file.read((char*)data.data(), data.size());
+		file.read((char*)data.data(), data_size);
 
 		return data;
 	}

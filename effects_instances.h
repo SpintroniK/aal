@@ -25,7 +25,7 @@ namespace aal
 		{
 			for(size_t i = 0; i < length_samples; ++i)
 			{
-				buffer_out[i] = buffer_in[i] / 2;
+				buffer_out[i] = buffer_in[i] * 1;
 			}
 		}
 

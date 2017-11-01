@@ -79,6 +79,7 @@ namespace aal
 		mutable std::atomic<size_t> index;
 		mutable std::atomic<bool> playing;
 		std::atomic<bool> is_loop;
+
 		std::vector<short> data;
 		std::vector<effect*> effects;
 

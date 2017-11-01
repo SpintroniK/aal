@@ -58,13 +58,16 @@ namespace aal
 			return err;
 		}
 
+		size_t get_num_channels() const noexcept { return num_channels; }
+		size_t get_sample_rate() const noexcept { return _sample_rate; }
+
 	private:
 
 
 		int set_hw_parameters()
 		{
 
-			unsigned int sample_rate;
+			unsigned int sample_rate = static_cast<unsigned int>(_sample_rate);
 			snd_pcm_uframes_t size;
 			int dir;
 
@@ -72,11 +75,10 @@ namespace aal
 			snd_pcm_hw_params_set_rate_resample(handle, hw_parameters, 1);
 			snd_pcm_hw_params_set_access(handle, hw_parameters, SND_PCM_ACCESS_RW_INTERLEAVED);
 			snd_pcm_hw_params_set_format(handle, hw_parameters, SND_PCM_FORMAT_S16_LE);
-			snd_pcm_hw_params_set_channels(handle, hw_parameters, 1); //2);
-
-			sample_rate = 44100;
+			snd_pcm_hw_params_set_channels(handle, hw_parameters, num_channels);
 
 			snd_pcm_hw_params_set_rate_near(handle, hw_parameters, &sample_rate, 0);
+			_sample_rate = static_cast<size_t>(sample_rate);
 
 			snd_pcm_hw_params_set_buffer_time_near(handle, hw_parameters, &buffer_time, &dir);
 
@@ -129,6 +131,8 @@ namespace aal
 		size_t _buffer_size;
 		size_t _period_size;
 
+		size_t num_channels = 2;
+		size_t _sample_rate = 44100;
 	};
 
 }
