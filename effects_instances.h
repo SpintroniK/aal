@@ -13,21 +13,25 @@
 namespace aal
 {
 
-	class Amplify : public effect
+	class Volume : public effect
 	{
 
 	public:
 
-		Amplify(){}
-		virtual ~Amplify(){}
+		Volume(double val) : k(val){}
+		virtual ~Volume(){}
 
 		virtual void process(const short* buffer_in, short* buffer_out, size_t length_samples) const noexcept final
 		{
 			for(size_t i = 0; i < length_samples; ++i)
 			{
-				buffer_out[i] = buffer_in[i] * 1;
+				buffer_out[i] = static_cast<short>(static_cast<double>(buffer_in[i]) * k);
 			}
 		}
+
+	private:
+
+		double k;
 
 	};
 

@@ -20,21 +20,19 @@ int main(int argc, char* argv[])
 
 
 	aal::buffer buf{"/home/jeremy/Desktop/2.wav"};
-	//aal::buffer buf2{"/home/jeremy/Desktop/Prog/eXaDrums/eXaDrums/Data/SoundBank/SnareDrum/snare1.raw"};
-	//std::vector<aal::buffer> vbuf(64, buf2);
+	aal::buffer buf2{"/home/jeremy/Desktop/Prog/eXaDrums/eXaDrums/Data/SoundBank/SnareDrum/snare1.wav"};
+	std::vector<aal::buffer> vbuf(64, buf2);
 
 	aal::device device;
 
 	aal::voice v{device.play_sound(buf)};
-	//v.add_effect<aal::Amplify>();
-
-	//aal::voice v2{device.play_sound(buf2)};
+	v.add_effect<aal::Volume>(0.5);
 
 	size_t i = 0;
-	while(v.is_playing())// && i < vbuf.size())
+	while(v.is_playing() && i < vbuf.size())
 	{
 		sleep_for(1s);
-		//device.play_sound(vbuf[i]);
+		device.play_sound(vbuf[i]);
 		std::cout << "Playing..." << std::endl;
 		i++;
 	}

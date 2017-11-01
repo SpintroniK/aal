@@ -27,10 +27,10 @@ namespace aal
 		bool is_playing() const noexcept { return src->is_playing(); }
 		void stop() const noexcept { src->stop(); }
 
-		template <class T>
-		void add_effect()
+		template <class T, class... Args>
+		void add_effect(Args... args)
 		{
-			src->add_effect(new T());
+			src->add_effect(new T(args...));
 		}
 
 	private:
