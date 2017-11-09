@@ -43,7 +43,7 @@ namespace aal
 
 	public:
 
-		wav_header(const std::vector<uint8_t>& header_data)
+		explicit wav_header(const std::vector<uint8_t>& header_data)
 		: chunk_id(bytes_to_string(header_data, 0, 4)),
 		  format(bytes_to_string(header_data, 8, 12)),
 		  subchunk1_id(bytes_to_string(header_data, 12, 16)),

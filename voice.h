@@ -21,7 +21,7 @@ namespace aal
 	{
 	public:
 
-		voice(source& s) : src(&s) {}
+		explicit voice(source& s) : src(&s) {}
 		~voice() {}
 
 		bool is_playing() const noexcept { return src->is_playing(); }

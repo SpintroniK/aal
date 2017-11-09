@@ -25,7 +25,7 @@ namespace aal
 
 	public:
 
-		doublebuf(const std::string& file_location)
+		explicit doublebuf(const std::string& file_location)
 		: _file_location(file_location), buf_file{file_location}, is_read{true}
 		{
 			is_loop.store(true, std::memory_order_release);

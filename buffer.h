@@ -23,7 +23,7 @@ namespace aal
 
 	public:
 
-		buffer(const std::string& file_location) : _file_location(file_location)
+		explicit buffer(const std::string& file_location) : _file_location(file_location)
 		{
 			//load_from_disk(file_location);
 			data = load_wav_from_disk(file_location);

@@ -18,7 +18,7 @@ namespace aal
 
 	public:
 
-		Volume(double val) : k(val){}
+		explicit Volume(double val) : k(val){}
 		virtual ~Volume(){}
 
 		virtual void process(const short* buffer_in, short* buffer_out, size_t length_samples) const noexcept final
